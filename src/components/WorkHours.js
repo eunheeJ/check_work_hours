@@ -7,12 +7,14 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
-import React from "react";
+import React, { useCallback, useEffect } from "react";
 import dragFileStore from "../stores/DragFileStore";
 import { observer } from "mobx-react-lite";
+import dayjs from "dayjs";
 
 const WorkHours = observer(() => {
   const { work_hours_list } = dragFileStore;
+  const FULL_TIME_HOURS = 40 * 60;
   const [totalWorkHour, setTotalWorkHour] = React.useState(0);
   const [check_lunch, setCheck_lunch] = React.useState({
     0: true,
@@ -38,9 +40,19 @@ const WorkHours = observer(() => {
   });
 
   const days = ["월", "화", "수", "목", "금"];
+
+  const calFirstMonday = () => {
+    const today = new Date();
+    const firstMondayDate = new Date(today);
+    const day = today.getDay();
+    firstMondayDate.setDate(today.getDate() - (day - 1));
+    let formatDate = dayjs(firstMondayDate);
+    formatDate.format("YYYY.MM.DD");
+  };
   const hourToMinute = (number) => {
     return number * 60;
   };
+
   const minuteToHour = (number) => {
     const hour = parseInt(number / 60)
       .toString()
@@ -49,14 +61,15 @@ const WorkHours = observer(() => {
     return [hour, minute];
   };
 
-  const calWorkHours = (enter, out) => {
+  const calWorkHours = useCallback((enter, out) => {
     const newEnter = enter.split(":");
     const newOut = out.split(":");
     const enterMinute = hourToMinute(Number(newEnter[0])) + Number(newEnter[1]);
     const outMinute = hourToMinute(Number(newOut[0])) + Number(newOut[1]);
     const workMinutes = outMinute - enterMinute - 60;
     return workMinutes;
-  };
+  }, []);
+
   const handleLunch = (e, idx) => {
     check_lunch[idx] = e.target.checked;
     const newCheck_lunch = { ...check_lunch };
@@ -73,8 +86,8 @@ const WorkHours = observer(() => {
     }
     setCheck_lunch(newCheck_lunch);
   };
+
   const handleDinner = (e, idx) => {
-    console.log("????");
     check_dinner[idx] = e.target.checked;
     const newCheck_dinner = { ...check_dinner };
     if (newCheck_dinner[idx]) {
@@ -91,7 +104,7 @@ const WorkHours = observer(() => {
     setCheck_dinner(newCheck_dinner);
   };
 
-  const initFunction = () => {
+  React.useEffect(() => {
     let totalMinutes = 0;
     work_hours_list.forEach((v, idx) => {
       const workMinutes = calWorkHours(v["입실"], v["퇴실"]);
@@ -102,12 +115,7 @@ const WorkHours = observer(() => {
       totalMinutes += workMinutes;
     });
     setTotalWorkHour(totalMinutes);
-  };
-
-  React.useEffect(() => {
-    initFunction();
-    console.log("work_hour_obj:", work_hour_obj);
-  }, []);
+  }, [calWorkHours, work_hour_obj, work_hours_list]);
 
   return (
     <TableContainer>
@@ -194,6 +202,15 @@ const WorkHours = observer(() => {
               총 근무시간 :
               {totalWorkHour &&
                 `${minuteToHour(totalWorkHour).join("시간 ")}분`}
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell align="center" colSpan={5}>
+              남은 근무시간 :
+              {totalWorkHour &&
+                `${minuteToHour(FULL_TIME_HOURS - totalWorkHour).join(
+                  "시간 "
+                )}분`}
             </TableCell>
           </TableRow>
         </TableBody>
