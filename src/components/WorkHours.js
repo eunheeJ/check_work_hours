@@ -1,16 +1,19 @@
 import {
   Checkbox,
+  MenuItem,
+  Select,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Typography,
+  Stack
 } from "@mui/material";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback } from "react";
 import dragFileStore from "../stores/DragFileStore";
 import { observer } from "mobx-react-lite";
-import dayjs from "dayjs";
 
 const WorkHours = observer(() => {
   const { work_hours_list } = dragFileStore;
@@ -41,14 +44,7 @@ const WorkHours = observer(() => {
 
   const days = ["월", "화", "수", "목", "금"];
 
-  const calFirstMonday = () => {
-    const today = new Date();
-    const firstMondayDate = new Date(today);
-    const day = today.getDay();
-    firstMondayDate.setDate(today.getDate() - (day - 1));
-    let formatDate = dayjs(firstMondayDate);
-    formatDate.format("YYYY.MM.DD");
-  };
+
   const hourToMinute = (number) => {
     return number * 60;
   };
@@ -104,6 +100,19 @@ const WorkHours = observer(() => {
     setCheck_dinner(newCheck_dinner);
   };
 
+  const hoursArr=Array.from({ length: 25 }, (_, index) => {
+    const formattedHour = String(index).padStart(2, '0');
+    return formattedHour;
+  })
+  const minuteArr = Array.from({ length: 60 }, (_, index) => {
+    const formattedHour = String(index).padStart(2, '0');
+    return formattedHour;
+  })
+
+  // const onChangeHour = (e, idx)=>{
+  //   setWork_hour_obj
+  // } 
+
   React.useEffect(() => {
     let totalMinutes = 0;
     work_hours_list.forEach((v, idx) => {
@@ -115,7 +124,7 @@ const WorkHours = observer(() => {
       totalMinutes += workMinutes;
     });
     setTotalWorkHour(totalMinutes);
-  }, [calWorkHours, work_hour_obj, work_hours_list]);
+  }, [calWorkHours, work_hours_list]);
 
   return (
     <TableContainer>
@@ -132,7 +141,7 @@ const WorkHours = observer(() => {
         <TableBody>
           <TableRow>
             {work_hours_list.map((_, idx) => (
-              <TableCell align="center">
+              <TableCell align="center" key={idx}>
                 점심
                 <Checkbox
                   label="점심"
@@ -143,13 +152,13 @@ const WorkHours = observer(() => {
             ))}
             {new Array(5 - work_hours_list.length)
               .fill(<Checkbox checked={false} disabled />)
-              .map((v) => (
-                <TableCell align="center">점심 {v}</TableCell>
+              .map((v, idx) => (
+                <TableCell align="center" key={idx}>점심 {v}</TableCell>
               ))}
           </TableRow>
           <TableRow>
             {work_hours_list.map((_, idx) => (
-              <TableCell align="center">
+              <TableCell align="center" key={idx}>
                 저녁{" "}
                 <Checkbox
                   checked={check_dinner[idx]}
@@ -159,29 +168,40 @@ const WorkHours = observer(() => {
             ))}
             {new Array(5 - work_hours_list.length)
               .fill(<Checkbox checked={false} disabled />)
-              .map((v) => (
-                <TableCell align="center">저녁 {v}</TableCell>
+              .map((v,idx) => (
+                <TableCell align="center" key={idx}>저녁 {v}</TableCell>
               ))}
           </TableRow>
 
           <TableRow>
-            {work_hours_list.map((v) => (
-              <TableCell align="center">입실 : {v["입실"]}</TableCell>
+            {work_hours_list.map((v,idx) => (
+              <TableCell align="center" key={idx}>입실 : {v["입실"]}</TableCell>
             ))}
             {new Array(5 - work_hours_list.length)
-              .fill("입실 : 00:00")
-              .map((v) => (
-                <TableCell align="center">{v}</TableCell>
+              .fill("입실")
+              .map((v,idx) => (
+                <TableCell align="center" key={idx} >
+                  <Stack direction={"row"} sx={{alignItems:'center'}}>
+                  <Typography sx={{wordBreak:"keep-all"}}>{v} </Typography>
+                  <Select defaultValue={"00"}>
+                    {hoursArr.map((item)=><MenuItem value={item}>{item}</MenuItem>)}
+                  </Select>
+                  <Typography>:</Typography>
+                  <Select defaultValue={"00"}>
+                  {minuteArr.map((item)=><MenuItem value={item}>{item}</MenuItem>)}
+                  </Select>
+                  </Stack>
+                </TableCell>
               ))}
           </TableRow>
           <TableRow>
-            {work_hours_list.map((v) => (
-              <TableCell align="center">퇴실 : {v["퇴실"]}</TableCell>
+            {work_hours_list.map((v,idx) => (
+              <TableCell align="center" key={idx}>퇴실 : {v["퇴실"]}</TableCell>
             ))}
             {new Array(5 - work_hours_list.length)
               .fill("퇴실 : 00:00")
-              .map((v) => (
-                <TableCell align="center">{v}</TableCell>
+              .map((v,idx) => (
+                <TableCell align="center" key={idx}>{v}</TableCell>
               ))}
           </TableRow>
           <TableRow>
@@ -193,8 +213,8 @@ const WorkHours = observer(() => {
             ))}
             {new Array(5 - work_hours_list.length)
               .fill("근무 시간 : 00:00")
-              .map((v) => (
-                <TableCell align="center">{v}</TableCell>
+              .map((v,idx) => (
+                <TableCell align="center" key={idx}>{v}</TableCell>
               ))}
           </TableRow>
           <TableRow>

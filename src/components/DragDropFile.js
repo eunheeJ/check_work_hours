@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
+import React from "react";
 import "./DragDropFile.css";
 import { observer } from "mobx-react-lite";
 import dragFileStore from "../stores/DragFileStore";
 import * as XLSX from "xlsx";
+import dayjs from "dayjs";
 
 const DragDropFile = observer(() => {
   const { workHoursList, file } = dragFileStore;
@@ -10,16 +11,56 @@ const DragDropFile = observer(() => {
 
   // ref
   const inputRef = React.useRef(null);
-
+  const findWorkDate = (obj,columnEn)=>{
+    console.log("obj",obj)
+    console.log("columnEn",columnEn)
+    let i = 2
+    let column = columnEn +`${i}`
+    let workDateArr = []
+    
+    while(column in obj){
+      console.log("???")
+      if("w" in obj[column]&&"v" in obj[column]){
+        workDateArr.push({column:column, date:obj[column]["w"], idx:obj[column]["v"]})
+      }
+      i+=1
+      column = columnEn + `${i}`
+      if (i>=1000){
+        break
+      }
+    }
+    const date = dayjs()
+    const firstMonday = dayjs().subtract(date.get("d")-1, 'd').format("YYYY-MM-DD")
+    const thisWeek = workDateArr.filter((d)=>dayjs(d.date).isAfter(firstMonday,'date')||dayjs(d.date).isSame(firstMonday,'date'))
+    return thisWeek.map(v=>v.idx)
+  }
+  const findWorkDateColumn = (obj) =>{
+    for (let i=65;i<91;i++){
+      const column=String.fromCharCode(i)+"1"
+      if(column in obj && "w" in obj[column]){
+        if(obj[column]["w"]==="근태일자"){
+          const columnName = column.slice(0,-1)
+          return findWorkDate(obj,columnName)
+        }
+      }
+      if(!(column in obj )){
+        break
+      }
+    }
+    return []
+  }
   const readExcel = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const data = reader.result;
       const workBook = XLSX.read(data, { type: "binary" });
       workBook.SheetNames.forEach((sheetName) => {
-        console.log(`sheet name : ${sheetName}`);
+        const thisWeekColumn = findWorkDateColumn(workBook.Sheets[sheetName])
+
+
         const row = XLSX.utils.sheet_to_json(workBook.Sheets[sheetName]);
-        workHoursList(row);
+        const newThisWeekFilterRow = row.filter(r=>thisWeekColumn.indexOf(r["근태일자"])>-1)
+        workHoursList(newThisWeekFilterRow);
       });
     };
     reader.readAsBinaryString(dragFileStore.file);
@@ -74,7 +115,7 @@ const DragDropFile = observer(() => {
           ref={inputRef}
           type="file"
           id="input-file-upload"
-          onChange={handleChange}
+          onChange={handleChange}s
           accept="application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         />
         <label
